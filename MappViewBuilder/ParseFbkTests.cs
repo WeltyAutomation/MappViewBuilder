@@ -7,7 +7,7 @@ using Xunit;
 
 namespace MappViewBuilder
 {
-    public class BindingBuilderTests
+    public class ParseFbkTests
     {
 
         [Fact]
@@ -164,31 +164,4 @@ namespace MappViewBuilder
         }
 
     }
-
-    //public class Fbk
-    //{
-    //    public Fbk(string definition)
-    //    {
-    //        var lines = definition.Split(Environment.NewLine);
-    //        bool inputs;
-    //        bool outputs;
-    //        bool local;
-
-    //        foreach (var line in lines)
-    //        {
-    //            if (line.Contains("FUNCTION_BLOCK"))
-    //        }
-    //    }
-
-    //    public string Name;
-    //    public List<FbkVar> Inputs;
-    //    public List<FbkVar> Outputs;
-    //    public List<FbkVar> Locals;
-    //}
-
-    //public class FbkVar
-    //{
-    //    public string Name;
-    //    public string Type;
-    //}
 }
