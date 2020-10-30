@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using FluentAssertions;
 using Xunit;
 
-namespace MappViewBuilder
+namespace FunctionParser.Tests
 {
     public class FunctionParserTests
     {
@@ -39,7 +36,7 @@ namespace MappViewBuilder
             var funContent =
                 "FUNCTION_BLOCK SampleFBK END_FUNCTION_BLOCK,FUNCTION SampleFunc : BOOL END_FUNCTION,FUNCTION_BLOCK SampleFBK2 END_FUNCTION_BLOCK";
 
-            var fbkTexts = GetFunctionBlockTexts(funContent);
+            var fbkTexts = Fbk.GetFunctionBlockTexts(funContent);
             fbkTexts[0].Should().Be("FUNCTION_BLOCK SampleFBK");
             fbkTexts[1].Should().Be("FUNCTION_BLOCK SampleFBK2");
         }
@@ -174,7 +171,7 @@ namespace MappViewBuilder
             var sampleFilePath = "SampleFile\\TTCtrlLIB.fun";
             var fileContent = File.ReadAllText(sampleFilePath);
 
-            var fbks = ParseFunctionFile(fileContent);
+            var fbks = Fbk.ParseFunctionFile(fileContent);
 
             fbks.Count.Should().Be(10);
 
@@ -239,112 +236,6 @@ namespace MappViewBuilder
             fbks[9].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(0);
         }
 
-        public static List<Fbk> ParseFunctionFile(string fileContent)
-        {
-            var flattenedText = Fbk.FlattenDefinitionText(fileContent);
-            var functionTexts = GetFunctionBlockTexts(flattenedText);
-            return functionTexts.Select(s => new Fbk(s)).ToList();
-        }
 
-        public static string[] GetFunctionBlockTexts(string content)
-        {
-            var variableGroupRegex = new Regex(@"FUNCTION_BLOCK.*$", RegexOptions.None);
-            var texts = content.Split("END_FUNCTION_BLOCK").Select(v => v.Trim().Trim(','));
-            var matches = texts.Select(v => variableGroupRegex.Match(v));
-
-            return matches.Where(m => m.Success).Select(m => m.Value).ToArray();
-        }
-    }
-
-    public class Fbk
-    {
-        public Fbk(string content)
-        {
-            Name = GetFbkName(content);
-            Variables = GetVariables(content);
-        }
-
-        public string Name;
-        public List<FbkVar> Variables;
-
-        public static string GetFbkName(string funContent)
-        {
-            var match = Regex.Match(funContent, @"FUNCTION_BLOCK (\w+)");
-            return match.Success ? match.Groups[1].Value : string.Empty;
-        }
-
-        public static List<FbkVar> GetVariables(string funContent)
-        {
-            var variables = new List<FbkVar>();
-            foreach (var group in GetVariableGroupTexts(funContent))
-            {
-                var category = FbkVar.GetVariableCategory(group);
-                if (category.Equals(FbkVarCategory.Other))
-                {
-                    Console.WriteLine("STOP");
-                }
-                variables.AddRange(FbkVar.GetVariableDefinitions(@group).Select(variableText => new FbkVar(variableText, category)));
-            }
-
-            return variables;
-        }
-
-        public static string FlattenDefinitionText(string content)
-        {
-            return string.Join(",", content.Split(Environment.NewLine).Select(s => s.Trim()));
-        }
-
-        public static string[] GetVariableGroupTexts(string content)
-        {
-            var flatContent = FlattenDefinitionText(content);
-            var variableGroupRegex = new Regex(@"VAR.*END_VAR", RegexOptions.None);
-            var match = variableGroupRegex.Match(flatContent);
-            return match.Value.Split("END_VAR", StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim(',')).ToArray();
-        }
-    }
-
-    public class FbkVar
-    {
-        public FbkVar(string variableText, FbkVarCategory category)
-        {
-            Console.WriteLine($"{category}, {variableText}");
-            var (name, type) = ParseVariable(variableText);
-            Name = name;
-            Type = type;
-            Category = category;
-        }
-
-        public string Name;
-        public string Type;
-        public FbkVarCategory Category;
-
-        public static (string name, string type) ParseVariable(string variableText)
-        {
-            var match = Regex.Match(variableText, @"^(\w+).*\W(\w+);$");
-            return match.Success ? (match.Groups[1].Value, match.Groups[2].Value) : (string.Empty, string.Empty);
-        }
-
-        public static FbkVarCategory GetVariableCategory(string variableGroupText)
-        {
-            var header = variableGroupText.Split(',').FirstOrDefault();
-
-            return string.IsNullOrWhiteSpace(header) ? FbkVarCategory.Other :
-                header.Equals("VAR_INPUT") ? FbkVarCategory.Input :
-                header.Equals("VAR_OUTPUT") ? FbkVarCategory.Output :
-                header.Equals("VAR") ? FbkVarCategory.Local : FbkVarCategory.Other;
-        }
-
-        public static string[] GetVariableDefinitions(string variableGroupText)
-        {
-            return variableGroupText.Split(',').Where(s => !s.StartsWith("VAR")).ToArray();
-        }
-    }
-
-    public enum FbkVarCategory
-    {
-        Input,
-        Output,
-        Local,
-        Other
     }
 }

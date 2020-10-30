@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FunctionParser\FunctionParser.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="SampleFile\TTCtrlLIB.fun">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
