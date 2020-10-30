@@ -46,6 +46,52 @@ namespace MappViewContentGenerator.Tests
                     $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_SampleFBK"" top=""0"" left=""0"" width=""240"" height=""180"" zIndex=""0"" text=""SampleFBK"" style=""FbkLabel"" />");
         }
 
+        [Fact]
+        public void FbkContentElementHasVariableElementsWithCorrectPlacement()
+        {
+            var funContent =
+                @"FUNCTION_BLOCK SampleFBK
+                    VAR_INPUT
+                        InputVariable0 : BOOL;
+                        InputVariable1 : BOOL;
+                        InputVariable2 : BOOL;
+                    END_VAR
+                    VAR_OUTPUT
+                        OutputVariable: BOOL;
+                    END_VAR
+                    VAR
+                        InternalVariable: TransferConveyorStateEnum;
+                    END_VAR
+                END_FUNCTION_BLOCK";
+
+            var fbk = new Fbk(Fbk.FlattenDefinitionText(funContent));
+
+            var fbkContentElement = new FbkContentElement(fbk);
+
+            //inputs
+            fbkContentElement.VarContentElements[0].Name.Should().Be("InputVariable0");
+            fbkContentElement.VarContentElements[0].Top.Should().Be(0);
+            fbkContentElement.VarContentElements[0].Left.Should().Be(0);
+
+            fbkContentElement.VarContentElements[1].Name.Should().Be("InputVariable1");
+            fbkContentElement.VarContentElements[1].Top.Should().Be(FbkVarContentElement.VarLabelHeight);
+            fbkContentElement.VarContentElements[1].Left.Should().Be(0);
+
+            fbkContentElement.VarContentElements[2].Name.Should().Be("InputVariable2");
+            fbkContentElement.VarContentElements[2].Top.Should().Be(FbkVarContentElement.VarLabelHeight * 2);
+            fbkContentElement.VarContentElements[2].Left.Should().Be(0);
+
+            //local
+            fbkContentElement.VarContentElements[3].Name.Should().Be("OutputVariable");
+            fbkContentElement.VarContentElements[3].Top.Should().Be(0);
+            fbkContentElement.VarContentElements[3].Left.Should().Be(FbkVarContentElement.VarLabelWidth + FbkContentElement.FbkWidth);
+
+            //outputs
+            fbkContentElement.VarContentElements[4].Name.Should().Be("InternalVariable");
+            fbkContentElement.VarContentElements[4].Top.Should().Be(fbkContentElement.Top + FbkVarContentElement.VarLabelHeight);
+            fbkContentElement.VarContentElements[4].Left.Should().Be(FbkVarContentElement.VarLabelWidth + FbkContentElement.Padding);
+        }
+
     }
 
     public class ContentElement
@@ -61,15 +107,18 @@ namespace MappViewContentGenerator.Tests
     }
     public class FbkContentElement : ContentElement
     {
-        public static int FbkWidth = 240;
+        public static int Padding = 20;
+        public static int FbkWidth = FbkVarContentElement.VarLabelWidth + Padding * 2;
         public FbkContentElement(Fbk fbk)
         {
             Name = fbk.Name;
-            
+            VarContentElements = GenerateContentElements(fbk.Variables);
             Height = CalculateHeight(fbk.Variables);
             Width = FbkWidth;
             Style = "FbkLabel";
         }
+
+        public List<FbkVarContentElement> VarContentElements;
 
         private int CalculateHeight(List<FbkVar> fbkVars)
         {
@@ -80,6 +129,40 @@ namespace MappViewContentGenerator.Tests
                 fbkVars.Count(v => v.Category.Equals(FbkVarCategory.Local))
             };
             return counts.Max() * FbkVarContentElement.VarLabelHeight;
+        }
+
+        private List<FbkVarContentElement> GenerateContentElements(List<FbkVar> vars)
+        {
+            var elements = new List<FbkVarContentElement>();
+
+            var topOffsets = new Dictionary<FbkVarCategory, int>
+            {
+                {FbkVarCategory.Input, 0},
+                {FbkVarCategory.Output, 0},
+                {FbkVarCategory.Local, FbkVarContentElement.VarLabelHeight},
+            };
+
+            var leftOffsets = new Dictionary<FbkVarCategory, int>
+            {
+                {FbkVarCategory.Input, 0},
+                {FbkVarCategory.Output, FbkVarContentElement.VarLabelWidth + FbkWidth},
+                {FbkVarCategory.Local, FbkVarContentElement.VarLabelWidth + Padding},
+            };
+
+
+            foreach (var fbkVar in vars)
+            {
+                var element = new FbkVarContentElement(fbkVar)
+                {
+                    Top = topOffsets[fbkVar.Category], 
+                    Left = leftOffsets[fbkVar.Category]
+                };
+
+                topOffsets[fbkVar.Category] = topOffsets[fbkVar.Category] + FbkVarContentElement.VarLabelHeight;
+                elements.Add(element);
+            }
+
+            return elements;
         }
     }
     public class FbkVarContentElement : ContentElement
