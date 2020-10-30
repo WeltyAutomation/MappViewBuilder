@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using FluentAssertions;
@@ -7,7 +8,7 @@ using Xunit;
 
 namespace MappViewBuilder
 {
-    public class ParseFbkTests
+    public class FunctionParserTests
     {
 
         [Fact]
@@ -30,6 +31,17 @@ namespace MappViewBuilder
             var fbkName = Fbk.GetFbkName(funContent);
 
             fbkName.Should().Be("SampleFBK");
+        }
+
+        [Fact]
+        public void WeCanIgnoreFunctions()
+        {
+            var funContent =
+                "FUNCTION_BLOCK SampleFBK END_FUNCTION_BLOCK,FUNCTION SampleFunc : BOOL END_FUNCTION,FUNCTION_BLOCK SampleFBK2 END_FUNCTION_BLOCK";
+
+            var fbkTexts = GetFunctionBlockTexts(funContent);
+            fbkTexts[0].Should().Be("FUNCTION_BLOCK SampleFBK");
+            fbkTexts[1].Should().Be("FUNCTION_BLOCK SampleFBK2");
         }
 
         [Fact]
@@ -141,20 +153,107 @@ namespace MappViewBuilder
 
             var fbk = new Fbk(funContent);
 
+            fbk.Name.Should().Be("SampleFBK");
+            fbk.Variables.Count.Should().Be(3);
+            fbk.Variables[0].Category.Should().Be(FbkVarCategory.Input);
+            fbk.Variables[0].Name.Should().Be("InputVariable");
+            fbk.Variables[0].Type.Should().Be("BOOL");
+
+            fbk.Variables[1].Category.Should().Be(FbkVarCategory.Output);
+            fbk.Variables[1].Name.Should().Be("OutputVariable");
+            fbk.Variables[1].Type.Should().Be("BOOL");
+
+            fbk.Variables[2].Category.Should().Be(FbkVarCategory.Local);
+            fbk.Variables[2].Name.Should().Be("InternalVariable");
+            fbk.Variables[2].Type.Should().Be("TransferConveyorStateEnum");
         }
 
-        
+        [Fact]
+        public void WeCanParseAFullDotFunFileWithMultipleFbks()
+        {
+            var sampleFilePath = "SampleFile\\TTCtrlLIB.fun";
+            var fileContent = File.ReadAllText(sampleFilePath);
 
+            var fbks = ParseFunctionFile(fileContent);
 
+            fbks.Count.Should().Be(10);
 
+            fbks[0].Name.Should().Be("TransferConveyorStateMgrFBK");
+            fbks[0].Variables.Count.Should().Be(11);
+            fbks[0].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(5);
+            fbks[0].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(2);
+            fbks[0].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(4);
 
+            fbks[1].Name.Should().Be("TT_Mark_DKFV_CtrlFBK");
+            fbks[1].Variables.Count.Should().Be(25);
+            fbks[1].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(18);
+            fbks[1].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(4);
+            fbks[1].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(3);
 
+            fbks[2].Name.Should().Be("TT_Mark_DKFV_InputConfigFBK");
+            fbks[2].Variables.Count.Should().Be(19);
+            fbks[2].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(9);
+            fbks[2].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(4);
+            fbks[2].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(6);
 
+            fbks[3].Name.Should().Be("TT_Mark_DKFV_MgrFBK");
+            fbks[3].Variables.Count.Should().Be(39);
+            fbks[3].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(26);
+            fbks[3].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(8);
+            fbks[3].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(5);
 
+            fbks[4].Name.Should().Be("TT_Mark_DKFV_OutputConfigFBK");
+            fbks[4].Variables.Count.Should().Be(7);
+            fbks[4].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(4);
+            fbks[4].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(3);
+            fbks[4].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(0);
 
+            fbks[5].Name.Should().Be("TT_Mark_DKFV_PartPassCtrlFBK");
+            fbks[5].Variables.Count.Should().Be(9);
+            fbks[5].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(6);
+            fbks[5].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(3);
+            fbks[5].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(0);
 
+            fbks[6].Name.Should().Be("TT_TDC_DKFV_CtrlFBK");
+            fbks[6].Variables.Count.Should().Be(24);
+            fbks[6].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(17);
+            fbks[6].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(4);
+            fbks[6].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(3);
 
+            fbks[7].Name.Should().Be("TT_TDC_DKFV_InputConfigFBK");
+            fbks[7].Variables.Count.Should().Be(21);
+            fbks[7].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(9);
+            fbks[7].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(5);
+            fbks[7].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(7);
 
+            fbks[8].Name.Should().Be("TT_TDC_DKFV_OutputConfigFBK");
+            fbks[8].Variables.Count.Should().Be(7);
+            fbks[8].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(4);
+            fbks[8].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(3);
+            fbks[8].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(0);
+
+            fbks[9].Name.Should().Be("TT_TDC_DKFV_PartPassCtrlFBK");
+            fbks[9].Variables.Count.Should().Be(9);
+            fbks[9].Variables.Count(v => v.Category.Equals(FbkVarCategory.Input)).Should().Be(6);
+            fbks[9].Variables.Count(v => v.Category.Equals(FbkVarCategory.Output)).Should().Be(3);
+            fbks[9].Variables.Count(v => v.Category.Equals(FbkVarCategory.Local)).Should().Be(0);
+        }
+
+        public static List<Fbk> ParseFunctionFile(string fileContent)
+        {
+            var flattenedText = Fbk.FlattenDefinitionText(fileContent);
+            var functionTexts = GetFunctionBlockTexts(flattenedText);
+            return functionTexts.Select(s => new Fbk(s)).ToList();
+        }
+
+        public static string[] GetFunctionBlockTexts(string content)
+        {
+            var variableGroupRegex = new Regex(@"FUNCTION_BLOCK.*$", RegexOptions.None);
+            var texts = content.Split("END_FUNCTION_BLOCK").Select(v => v.Trim().Trim(','));
+            var matches = texts.Select(v => variableGroupRegex.Match(v));
+
+            return matches.Where(m => m.Success).Select(m => m.Value).ToArray();
+        }
     }
 
     public class Fbk
@@ -162,7 +261,7 @@ namespace MappViewBuilder
         public Fbk(string content)
         {
             Name = GetFbkName(content);
-
+            Variables = GetVariables(content);
         }
 
         public string Name;
@@ -174,11 +273,21 @@ namespace MappViewBuilder
             return match.Success ? match.Groups[1].Value : string.Empty;
         }
 
-        //public static List<FbkVar> GetVariables(string funContent)
-        //{
+        public static List<FbkVar> GetVariables(string funContent)
+        {
+            var variables = new List<FbkVar>();
+            foreach (var group in GetVariableGroupTexts(funContent))
+            {
+                var category = FbkVar.GetVariableCategory(group);
+                if (category.Equals(FbkVarCategory.Other))
+                {
+                    Console.WriteLine("STOP");
+                }
+                variables.AddRange(FbkVar.GetVariableDefinitions(@group).Select(variableText => new FbkVar(variableText, category)));
+            }
 
-
-        //}
+            return variables;
+        }
 
         public static string FlattenDefinitionText(string content)
         {
@@ -187,7 +296,7 @@ namespace MappViewBuilder
 
         public static string[] GetVariableGroupTexts(string content)
         {
-            var flatContent = Fbk.FlattenDefinitionText(content);
+            var flatContent = FlattenDefinitionText(content);
             var variableGroupRegex = new Regex(@"VAR.*END_VAR", RegexOptions.None);
             var match = variableGroupRegex.Match(flatContent);
             return match.Value.Split("END_VAR", StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim(',')).ToArray();
@@ -198,6 +307,7 @@ namespace MappViewBuilder
     {
         public FbkVar(string variableText, FbkVarCategory category)
         {
+            Console.WriteLine($"{category}, {variableText}");
             var (name, type) = ParseVariable(variableText);
             Name = name;
             Type = type;
