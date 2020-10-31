@@ -12,6 +12,7 @@ namespace MappViewContentGenerator
         {
             Name = fbk.Name;
             VarContentElements = GenerateContentElements(fbk.Variables);
+            Left = FbkVarContentElement.VarLabelWidth;
             Height = CalculateHeight(fbk.Variables);
             Width = FbkWidth;
             Style = "FbkLabel";
