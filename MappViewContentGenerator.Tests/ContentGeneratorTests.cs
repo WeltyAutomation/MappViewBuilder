@@ -90,5 +90,36 @@ namespace MappViewContentGenerator.Tests
             fbkContentElement.VarContentElements[4].Left.Should().Be(FbkVarContentElement.VarLabelWidth + FbkContentElement.Padding);
         }
 
+        [Fact]
+        public void FbkContentElementCanOutputItselfAndItsVariablesAsAnArrayOfStrings()
+        {
+            var funContent =
+                @"FUNCTION_BLOCK SampleFBK
+                    VAR_INPUT
+                        InputVariable0 : BOOL;
+                    END_VAR
+                    VAR_OUTPUT
+                        OutputVariable: BOOL;
+                    END_VAR
+                    VAR
+                        InternalVariable: TransferConveyorStateEnum;
+                    END_VAR
+                END_FUNCTION_BLOCK";
+
+            var fbk = new Fbk(Fbk.FlattenDefinitionText(funContent));
+
+            var fbkContentElement = new FbkContentElement(fbk);
+
+            fbkContentElement.ToContent().Should().BeEquivalentTo(new string[]
+            {
+                "<--*****************SampleFBK Function Block Diagram*****************-->",
+                $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_SampleFBK"" top=""0"" left=""0"" width=""240"" height=""60"" zIndex=""0"" text=""SampleFBK"" style=""FbkLabel"" />",
+                $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_InputVariable0"" top=""0"" left=""0"" width=""200"" height=""60"" zIndex=""0"" text=""InputVariable0"" style=""VarLabelBoolFalse"" />",
+                $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_OutputVariable"" top=""0"" left=""440"" width=""200"" height=""60"" zIndex=""0"" text=""OutputVariable"" style=""VarLabelBoolFalse"" />",
+                $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_InternalVariable"" top=""60"" left=""220"" width=""200"" height=""60"" zIndex=""0"" text=""InternalVariable"" style=""VarLabelBoolFalse"" />",
+                "<--******************************************************************-->"
+            });
+        }
+
     }
 }

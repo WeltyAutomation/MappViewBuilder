@@ -63,5 +63,15 @@ namespace MappViewContentGenerator
 
             return elements;
         }
+
+        public string[] ToContent()
+        {
+            var result = new List<string>();
+            result.Add($"<--*****************{Name} Function Block Diagram*****************-->");
+            result.Add(ElementString);
+            result.AddRange(VarContentElements.Select(v => v.ElementString));
+            result.Add("<--******************************************************************-->");
+            return result.ToArray();
+        }
     }
 }
