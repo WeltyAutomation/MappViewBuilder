@@ -10,6 +10,7 @@ namespace FunctionDiagramGenerator
     {
         static void Main(string[] args)
         {
+            var output = "C://Temp/Content.txt";
             var path = string.Empty;
 
             while (string.IsNullOrWhiteSpace(path))
@@ -24,7 +25,9 @@ namespace FunctionDiagramGenerator
 
             var fbkContents = fbks.Select(f => new FbkContentElement(f));
 
-            var lines = fbkContents.Select()
+            var lines = fbkContents.SelectMany(f => f.ToContent()).ToArray();
+
+            File.WriteAllLines(output, lines); 
         }
     }
 }
