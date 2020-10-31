@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace FunctionParser.Tests
+namespace FunctionParser
 {
     public class Fbk
     {

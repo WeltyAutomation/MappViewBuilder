@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
-using FunctionParser.Tests;
+using FunctionParser;
 using Xunit;
 
 namespace MappViewContentGenerator.Tests
@@ -92,89 +90,5 @@ namespace MappViewContentGenerator.Tests
             fbkContentElement.VarContentElements[4].Left.Should().Be(FbkVarContentElement.VarLabelWidth + FbkContentElement.Padding);
         }
 
-    }
-
-    public class ContentElement
-    {
-        public string Name;
-        public int Top;
-        public int Left;
-        public int Height;
-        public int Width;
-        public string Style;
-        public string ElementString =>
-            $@"<Widget xsi:type=""widgets.brease.Label"" id=""Label_{Name}"" top=""{Top}"" left=""{Left}"" width=""{Width}"" height=""{Height}"" zIndex=""0"" text=""{Name}"" style=""{Style}"" />";
-    }
-    public class FbkContentElement : ContentElement
-    {
-        public static int Padding = 20;
-        public static int FbkWidth = FbkVarContentElement.VarLabelWidth + Padding * 2;
-        public FbkContentElement(Fbk fbk)
-        {
-            Name = fbk.Name;
-            VarContentElements = GenerateContentElements(fbk.Variables);
-            Height = CalculateHeight(fbk.Variables);
-            Width = FbkWidth;
-            Style = "FbkLabel";
-        }
-
-        public List<FbkVarContentElement> VarContentElements;
-
-        private int CalculateHeight(List<FbkVar> fbkVars)
-        {
-            var counts = new[]
-            {
-                fbkVars.Count(v => v.Category.Equals(FbkVarCategory.Input)),
-                fbkVars.Count(v => v.Category.Equals(FbkVarCategory.Output)),
-                fbkVars.Count(v => v.Category.Equals(FbkVarCategory.Local))
-            };
-            return counts.Max() * FbkVarContentElement.VarLabelHeight;
-        }
-
-        private List<FbkVarContentElement> GenerateContentElements(List<FbkVar> vars)
-        {
-            var elements = new List<FbkVarContentElement>();
-
-            var topOffsets = new Dictionary<FbkVarCategory, int>
-            {
-                {FbkVarCategory.Input, 0},
-                {FbkVarCategory.Output, 0},
-                {FbkVarCategory.Local, FbkVarContentElement.VarLabelHeight},
-            };
-
-            var leftOffsets = new Dictionary<FbkVarCategory, int>
-            {
-                {FbkVarCategory.Input, 0},
-                {FbkVarCategory.Output, FbkVarContentElement.VarLabelWidth + FbkWidth},
-                {FbkVarCategory.Local, FbkVarContentElement.VarLabelWidth + Padding},
-            };
-
-
-            foreach (var fbkVar in vars)
-            {
-                var element = new FbkVarContentElement(fbkVar)
-                {
-                    Top = topOffsets[fbkVar.Category], 
-                    Left = leftOffsets[fbkVar.Category]
-                };
-
-                topOffsets[fbkVar.Category] = topOffsets[fbkVar.Category] + FbkVarContentElement.VarLabelHeight;
-                elements.Add(element);
-            }
-
-            return elements;
-        }
-    }
-    public class FbkVarContentElement : ContentElement
-    {
-        public static int VarLabelHeight = 60;
-        public static int VarLabelWidth = 200;
-        public FbkVarContentElement(FbkVar fbkVar)
-        {
-            Name = fbkVar.Name;
-            Height = VarLabelHeight;
-            Width = VarLabelWidth;
-            Style = "VarLabelBoolFalse";
-        }
     }
 }

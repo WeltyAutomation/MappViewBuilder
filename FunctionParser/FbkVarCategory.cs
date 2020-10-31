@@ -1,4 +1,4 @@
-namespace FunctionParser.Tests
+namespace FunctionParser
 {
     public enum FbkVarCategory
     {
